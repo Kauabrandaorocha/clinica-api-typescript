@@ -1,10 +1,11 @@
 import express from "express";
 import { Express, Request,  Response} from "express";
+import { parse } from "path";
 
 const app: Express = express();
 const port: number = 3000;
 
-app.use(express.json);
+app.use(express.json());
 
 type Secretario = {
     id: number,
@@ -292,3 +293,236 @@ app.post("/consultas", (req: Request, res: Response) => {
     res.status(201).json(medicos);
 });
 
+app.put("/secretarios/:id", (req: Request, res: Response) => {
+    const id: number = parseInt(req.params.id, 10);
+
+    if (isNaN(id) || id <= 0 ){
+        return res.status(400).json({ message: "ID inválido. Deve ser um número inteiro positivo." });
+    }
+
+    const secretarioIndex: number = secretarios.findIndex(s => s.id === id);
+    if (secretarioIndex === -1){
+        return res.status(404).json({ message: "Usuário não encontrado." })
+    }
+
+    const { nome, idade } = req.body;
+    const currentSecretario: Secretario = secretarios[secretarioIndex];
+
+    if (nome !== undefined) {
+        if (typeof nome !== 'string' || nome.trim() === "") {
+            return res.status(400).json({ message: "O nome, se fornecido, não pode estar vazio." });
+        }
+        currentSecretario.nome = nome;
+    }
+
+    if (idade !== undefined) {
+        if (typeof idade !== 'number' || !Number.isInteger(idade) || idade <= 0) {
+            return res.status(400).json({ message: "A idade, se fornecida, deve ser um número inteiro positivo"});
+        }
+        currentSecretario.idade = idade;
+    }
+
+    if (nome === undefined && idade === undefined) {
+        return res.status(400).json({ message: "Nenhum dado para atualizar foi fornecido (nome ou idade)."});
+    }
+
+    secretarios[secretarioIndex] = currentSecretario;
+    res.json(currentSecretario);
+});
+
+app.put("/pacientes/:id", (req: Request, res: Response) => {
+    const id: number = parseInt(req.params.id, 10);
+
+    if (isNaN(id) || id <= 0 ){
+        return res.status(400).json({ message: "ID inválido. Deve ser um número inteiro positivo." });
+    }
+
+    const pacienteIndex: number = pacientes.findIndex(p => p.id === id);
+    if (pacienteIndex === -1){
+        return res.status(404).json({ message: "Paciente não encontrado." })
+    }
+
+    const { nome, idade, sus } = req.body;
+    const currentPaciente: Paciente = pacientes[pacienteIndex];
+
+    if (nome !== undefined) {
+        if (typeof nome !== 'string' || nome.trim() === "") {
+            return res.status(400).json({ message: "O nome, se fornecido, não pode estar vazio." });
+        }
+        currentPaciente.nome = nome;
+    }
+
+    if (idade !== undefined) {
+        if (typeof idade !== 'number' || !Number.isInteger(idade) || idade <= 0) {
+            return res.status(400).json({ message: "A idade, se fornecida, deve ser um número inteiro positivo"});
+        }
+        currentPaciente.idade = idade;
+    }
+
+    if (sus !== undefined) {
+        if (typeof sus !== 'number' || !Number.isInteger(sus) || sus <= 0) {
+            return res.status(400).json({ message: "O SUS, se fornecido, não pode estar vazio." });
+        }
+        currentPaciente.nome = nome;
+    }
+
+    if (nome === undefined && idade === undefined) {
+        return res.status(400).json({ message: "Nenhum dado para atualizar foi fornecido (nome ou idade)."});
+    }
+
+    pacientes[pacienteIndex] = currentPaciente;
+    res.json(currentPaciente);
+});
+
+app.put("/medicos/:id", (req: Request, res: Response) => {
+    const id: number = parseInt(req.params.id, 10);
+
+    if (isNaN(id) || id <= 0 ){
+        return res.status(400).json({ message: "ID inválido. Deve ser um número inteiro positivo." });
+    }
+
+    const medicoIndex: number = medicos.findIndex(m => m.id === id);
+    if (medicoIndex === -1){
+        return res.status(404).json({ message: "Medico não encontrado." })
+    }
+
+    const { nome, idade, crm } = req.body;
+    const currentMedico: Medico = medicos[medicoIndex];
+
+    if (nome !== undefined) {
+        if (typeof nome !== 'string' || nome.trim() === "") {
+            return res.status(400).json({ message: "O nome, se fornecido, não pode estar vazio." });
+        }
+        currentMedico.nome = nome;
+    }
+
+    if (idade !== undefined) {
+        if (typeof idade !== 'number' || !Number.isInteger(idade) || idade <= 0) {
+            return res.status(400).json({ message: "A idade, se fornecida, deve ser um número inteiro positivo"});
+        }
+        currentMedico.idade = idade;
+    }
+
+    if (crm !== undefined) {
+        if (typeof crm !== 'number' && 'string' || !Number.isInteger(crm) ||crm.trim() === "" || crm <= 0) {
+            return res.status(400).json({ message: "O CRM, se fornecido, não pode estar vazio." });
+        }
+        currentMedico.crm = crm;
+    }
+
+    if (nome === undefined && idade === undefined) {
+        return res.status(400).json({ message: "Nenhum dado para atualizar foi fornecido (nome ou idade)."});
+    }
+
+    medicos[medicoIndex] = currentMedico;
+    res.json(currentMedico);
+});
+
+app.put("/consultas/:id", (req: Request, res: Response) => {
+    const id: number = parseInt(req.params.id, 10);
+
+    if (isNaN(id) || id <= 0 ){
+        return res.status(400).json({ message: "ID inválido. Deve ser um número inteiro positivo." });
+    }
+
+    const consultaIndex: number = consultas.findIndex(c => c.id === id);
+    if (consultaIndex === -1){
+        return res.status(404).json({ message: "Medico não encontrado." })
+    }
+
+    const { data_sintoma } = req.body;
+    const currentConsulta: Consulta = consultas[consultaIndex];
+
+    if (data_sintoma === undefined) {
+        return res.status(400).json({ message: "O campo 'data_sintoma' é obrigatório." });
+    }
+
+    const parsedDate = new Date(data_sintoma);
+    if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: "Data inválida. Use um formato de data válido (ex: YYYY-MM-DD"});
+    };
+
+    const now = new Date();
+    if (parsedDate > now) {
+         return res.status(400).json({ message: "A data do sintoma não pode ser no futuro." });
+    }
+
+    currentConsulta.data_sintoma = parsedDate;
+
+    consultas[consultaIndex] = currentConsulta;
+
+    res.json(currentConsulta);
+});
+
+
+app.delete("secretarios/:id", (req: Request, res: Response) => {
+    const id: number = parseInt(req.params.id, 10);
+
+    if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "ID inválido. Deve ser um número inteiro positivo." });
+    }
+
+    const secretarioIndex: number = secretarios.findIndex(s => s.id === id);
+
+    if (secretarioIndex === -1) {
+        return res.status(400).json({ message: "Usuário não encontrado"});
+    }
+
+    secretarios.splice(secretarioIndex, 1);
+    res.status(204).send();
+});
+
+app.delete("pacientes/:id", (req: Request, res: Response) => {
+    const id: number = parseInt(req.params.id, 10);
+
+    if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "ID inválido. Deve ser um número inteiro positivo." });
+    }
+
+    const pacienteIndex: number = pacientes.findIndex(p => p.id === id);
+
+    if (pacienteIndex === -1) {
+        return res.status(400).json({ message: "Paciente não encontrado"});
+    }
+
+    pacientes.splice(pacienteIndex, 1);
+    res.status(204).send();
+});
+
+app.delete("medicos/:id", (req: Request, res: Response) => {
+    const id: number = parseInt(req.params.id, 10);
+
+    if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "ID inválido. Deve ser um número inteiro positivo." });
+    }
+
+    const medicoIndex: number = medicos.findIndex(m => m.id === id);
+
+    if (medicoIndex === -1) {
+        return res.status(400).json({ message: "Medico não encontrado"});
+    }
+
+    medicos.splice(medicoIndex, 1);
+    res.status(204).send();
+});
+
+app.delete("consultas/:id", (req: Request, res: Response) => {
+    const id: number = parseInt(req.params.id, 10);
+
+    if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ message: "ID inválido. Deve ser um número inteiro positivo." });
+    }
+
+    const consultaIndex: number = consultas.findIndex(c => c.id === id);
+
+    if (consultaIndex === -1) {
+        return res.status(400).json({ message: "Consulta não encontrada"});
+    }
+
+    consultas.splice(consultaIndex, 1);
+    res.status(204).send();
+});
+
+app.listen(port, () => {
+    console.log(`Servidor rodando em http://localhost:${port}`);
+});
